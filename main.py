@@ -26,16 +26,20 @@ ARROW_VEL = 20  # Initial speed of the arrow
 GRAVITY = 0.5   # Gravity effect on the arrow
 MAX_ARROWS = 3
 PLAYER_WIDTH, PLAYER_HEIGHT = 50, 50
-ARROW_WIDTH, ARROW_HEIGHT = 10, 5
+ARROW_WIDTH, ARROW_HEIGHT = 30, 5  # Adjusted for arrow image size
 TARGET_VEL = 3  # Velocity of the moving target
 ANGLE = 30  # Initial angle of the arrow in degrees
 
-shot_sound = pygame.mixer.Sound(os.path.join('sounds', 'shot.mp3'))
-hit_sound = pygame.mixer.Sound(os.path.join('sounds', 'hit.mp3'))
-
-
 PLAYER_IMAGE = pygame.image.load(os.path.join('images', 'archer_stickman.png'))
 PLAYER = pygame.transform.scale(PLAYER_IMAGE, (PLAYER_WIDTH, PLAYER_HEIGHT))
+ARROW_IMAGE = pygame.image.load(os.path.join('images', 'arrow.png'))
+ARROW = pygame.transform.rotate(
+    pygame.transform.scale(ARROW_IMAGE, (ARROW_WIDTH, ARROW_HEIGHT)), 0
+)
+
+hit_sound = pygame.mixer.Sound(os.path.join('sounds', 'hit.mp3'))
+shot_sound = pygame.mixer.Sound(os.path.join('sounds', 'shot.mp3'))
+hit_sound.set_volume(.2)
 
 # Initial positions
 PLAYER_POS = (50, HEIGHT // 2 - PLAYER_HEIGHT // 2)
@@ -52,7 +56,7 @@ def draw_window(player, arrows, score):
 
     # Draw arrows
     for arrow in arrows:
-        pygame.draw.rect(WINDOW, BLACK, arrow[0])
+        WINDOW.blit(arrow[0], (arrow[1].x, arrow[1].y))
 
     # Draw target
     pygame.draw.rect(WINDOW, RED, TARGET_POS + [TARGET_WIDTH, TARGET_HEIGHT])
@@ -81,15 +85,15 @@ class Player(pygame.sprite.Sprite):
 
 def handle_arrows(arrows):
     for arrow in arrows:
-        arrow[0].x += arrow[2]  # Horizontal velocity
-        arrow[1] += GRAVITY  # Gravity increases vertical velocity
-        arrow[0].y += arrow[1]  # Update y position with vertical velocity
-        if arrow[0].x > WIDTH or arrow[0].y > HEIGHT or arrow[0].y < 0:
+        arrow[1].x += arrow[3]  # Horizontal velocity
+        arrow[2] += GRAVITY  # Gravity increases vertical velocity
+        arrow[1].y += arrow[2]  # Update y position with vertical velocity
+        if arrow[1].x > WIDTH or arrow[1].y > HEIGHT or arrow[1].y < -HEIGHT*.5:
             arrows.remove(arrow)
 
 def check_collision(arrows, target_rect):
     for arrow in arrows:
-        if target_rect.colliderect(arrow[0]):
+        if target_rect.colliderect(arrow[1]):
             hit_sound.play()
             arrows.remove(arrow)
             return True
@@ -125,8 +129,8 @@ def main():
                 if event.key == pygame.K_SPACE and len(arrows) < MAX_ARROWS:
                     # Create an arrow with initial velocities
                     shot_sound.play()
-                    arrow = pygame.Rect(player.rect.right, player.rect.centery, ARROW_WIDTH, ARROW_HEIGHT)
-                    arrows.append([arrow, init_vel_y, init_vel_x])  # [Rect, vertical velocity, horizontal velocity]
+                    arrow_rect = pygame.Rect(player.rect.right, player.rect.centery, ARROW_WIDTH, ARROW_HEIGHT)
+                    arrows.append([ARROW, arrow_rect, init_vel_y, init_vel_x])  # [Image, Rect, vertical velocity, horizontal velocity]
 
         keys_pressed = pygame.key.get_pressed()
         if keys_pressed[pygame.K_UP]:
