@@ -1,6 +1,7 @@
 import pygame
 import os
 import math
+import random
 
 pygame.font.init()
 pygame.mixer.init()
@@ -22,13 +23,13 @@ WINNER_FONT = pygame.font.SysFont('comicsans', 100)
 
 FPS = 60
 VEL = 5
-ARROW_VEL = 25  # Initial speed of the arrow
+ARROW_VEL = 27  # Initial speed of the arrow
 GRAVITY = 0.5   # Gravity effect on the arrow
 MAX_ARROWS = 3
 PLAYER_WIDTH, PLAYER_HEIGHT = 50, 50
 ARROW_WIDTH, ARROW_HEIGHT = 30, 5  # Adjusted for arrow image size
-TARGET_VEL = 3  # Velocity of the moving target
-ANGLE = 25  # Initial angle of the arrow in degrees
+#TARGET_VEL = 3  # Velocity of the moving target
+ANGLE = 18  # Initial angle of the arrow in degrees
 
 PLAYER_IMAGE = pygame.image.load(os.path.join('images', 'archer_stickman.png'))
 PLAYER = pygame.transform.scale(PLAYER_IMAGE, (PLAYER_WIDTH, PLAYER_HEIGHT))
@@ -41,33 +42,6 @@ hit_sound.set_volume(.2)
 
 # Initial positions
 PLAYER_POS = (50, HEIGHT // 2 - PLAYER_HEIGHT // 2)
-TARGET_WIDTH, TARGET_HEIGHT = 50, 50
-TARGET_POS = [WIDTH - TARGET_WIDTH - 20, HEIGHT // 2 - TARGET_HEIGHT // 2]
-target_direction = 1  # 1: down, -1: up
-
-def draw_window(player, arrows, score):
-    WINDOW.fill(WHITE)
-    pygame.draw.rect(WINDOW, BLACK, BORDER)
-
-    # Draw player
-    WINDOW.blit(player.image, player.rect.topleft)
-
-    # Draw arrows
-    for arrow in arrows:
-        # Calculate the angle based on current velocities
-        current_angle = math.degrees(math.atan2(-arrow[2], arrow[3]))  # Invert y to match pygame coordinates
-        rotated_arrow = pygame.transform.rotate(ARROW_IMAGE, current_angle)
-        new_rect = rotated_arrow.get_rect(center=arrow[1].center)
-        WINDOW.blit(rotated_arrow, new_rect.topleft)
-
-    # Draw target
-    pygame.draw.rect(WINDOW, RED, TARGET_POS + [TARGET_WIDTH, TARGET_HEIGHT])
-
-    # Draw score
-    score_text = HEALTH_FONT.render(f"Score: {score}", 1, BLACK)
-    WINDOW.blit(score_text, (WIDTH - score_text.get_width() - 10, 10))
-
-    pygame.display.update()
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, x, y):
@@ -85,6 +59,77 @@ class Player(pygame.sprite.Sprite):
     def draw(self, window):
         window.blit(self.image, self.rect.topleft)
 
+class Target:
+    def __init__(self, x, y, width, height):
+        self.rect = pygame.Rect(x, y, width, height)
+        self.width = width
+        self.height = height
+        self.color = RED
+        self.velocity = random.randint(1,4)
+        self.direction = 1  # 1: down, -1: up
+    
+    def move(self):
+        self.rect.y += self.velocity * self.direction
+        if self.rect.top <= 0:
+            self.rect.top = 0
+            self.direction *= -1
+        if self.rect.bottom >= HEIGHT:
+            self.rect.bottom = HEIGHT
+            self.direction *= -1
+    
+    def draw(self, window):
+        pygame.draw.rect(window, self.color, self.rect)
+
+class Obsticle:
+    def __init__(self, x, y, width, height):
+        self.rect = pygame.Rect(x, y, width, height)
+        self.width = width
+        self.height = height
+        self.color = BLACK
+        self.velocity = random.randint(1,4)
+        self.direction = 1  # 1: down, -1: up
+    
+    def move(self):
+        self.rect.y += self.velocity * self.direction
+        if self.rect.top <= 0:
+            self.rect.top = 0
+            self.direction *= -1
+        if self.rect.bottom >= HEIGHT:
+            self.rect.bottom = HEIGHT
+            self.direction *= -1
+    
+    def draw(self, window):
+        pygame.draw.rect(window, self.color, self.rect)
+
+def draw_window(player, arrows, targets, obsticles, score):
+    WINDOW.fill(WHITE)
+    pygame.draw.rect(WINDOW, BLACK, BORDER)
+
+    # Draw player
+    player.draw(WINDOW)
+
+    # Draw arrows
+    for arrow in arrows:
+        # Calculate the angle based on current velocities
+        current_angle = math.degrees(math.atan2(-arrow[2], arrow[3]))  # Invert y to match pygame coordinates
+        rotated_arrow = pygame.transform.rotate(ARROW_IMAGE, current_angle)
+        new_rect = rotated_arrow.get_rect(center=arrow[1].center)
+        WINDOW.blit(rotated_arrow, new_rect.topleft)
+
+    # Draw targets
+    for target in targets:
+        target.draw(WINDOW)
+
+    # Draw obsticles
+    for obsticle in obsticles:
+        obsticle.draw(WINDOW)
+
+    # Draw score
+    score_text = HEALTH_FONT.render(f"Score: {score}", 1, BLACK)
+    WINDOW.blit(score_text, (WIDTH - score_text.get_width() - 10, 10))
+
+    pygame.display.update()
+
 def handle_arrows(arrows):
     for arrow in arrows:
         arrow[1].x += arrow[3]  # Horizontal velocity
@@ -93,19 +138,27 @@ def handle_arrows(arrows):
         if arrow[1].x > WIDTH or arrow[1].y > HEIGHT or arrow[1].y < -HEIGHT * 0.5:
             arrows.remove(arrow)
 
-def check_collision(arrows, target_rect):
-    for arrow in arrows:
-        if target_rect.colliderect(arrow[1]):
-            hit_sound.play()
-            arrows.remove(arrow)
-            return True
-    return False
+def check_collision(arrows, targets):
+    hit_targets = []
+    for target in targets:
+        for arrow in arrows:
+            if target.rect.colliderect(arrow[1]):
+                hit_sound.play()
+                arrows.remove(arrow)
+                hit_targets.append(target)
+                break
+    return hit_targets
 
-def move_target():
-    global target_direction
-    TARGET_POS[1] += TARGET_VEL * target_direction
-    if TARGET_POS[1] <= 0 or TARGET_POS[1] + TARGET_HEIGHT >= HEIGHT:
-        target_direction *= -1
+def check_collision(arrows, obsticles):
+    hit_obsticles = []
+    for obsticle in obsticles:
+        for arrow in arrows:
+            if obsticle.rect.colliderect(arrow[1]):
+                hit_sound.play()
+                arrows.remove(arrow)
+                hit_obsticles.append(obsticle)
+                break
+    return hit_obsticles
 
 def main():
     player = Player(*PLAYER_POS)
@@ -113,6 +166,22 @@ def main():
     score = 0
     clock = pygame.time.Clock()
     run = True
+
+    # Create initial targets
+    targets = [
+        Target(WIDTH - 50, HEIGHT // 4, 45, 33),
+        Target(WIDTH - 50, HEIGHT // 4, 65, 42),
+        Target(WIDTH - 50, HEIGHT // 4, 5, 51)
+    ]
+
+    # Create initial obsticles
+    obsticles = [
+        Obsticle(WIDTH - 100, HEIGHT // 4, 50, 30),
+        Obsticle(WIDTH - 200, HEIGHT // 2, 70, 40),
+        Obsticle(WIDTH - 300, HEIGHT * 3 // 4, 60, 50)
+    ]
+
+
 
     # Calculate the initial velocity components based on the angle
     angle_rad = math.radians(ANGLE)
@@ -142,12 +211,37 @@ def main():
 
         handle_arrows(arrows)
 
-        target_rect = pygame.Rect(TARGET_POS + [TARGET_WIDTH, TARGET_HEIGHT])
-        if check_collision(arrows, target_rect):
-            score += 1
+        # Move and draw targets
+        for target in targets:
+            target.move()
 
-        move_target()
-        draw_window(player, arrows, score)
+        # Move and draw obsticles
+        for obsticle in obsticles:
+            obsticle.move()
+
+        hit_targets = check_collision(arrows, targets)
+        if hit_targets:
+            score += len(hit_targets)
+            targets = [target for target in targets if target not in hit_targets]
+            if not targets:
+                # Respawn targets if all are hit
+                targets = [
+                    Target(random.randint(WIDTH // 2, WIDTH - 50), random.randint(0, HEIGHT - 50), random.randint(30, 70), random.randint(30, 70))
+                    for _ in range(3)
+                ]
+        
+        hit_obsticles = check_collision(arrows, obsticles)
+        if hit_obsticles:
+            score -= len(hit_obsticles)
+            obsticles = [obsticle for obsticle in obsticles if obsticle not in hit_obsticles]
+            if not obsticles:
+                # Respawn obsticle if all are hit
+                obsticles = [
+                    Obsticle(random.randint(WIDTH // 2, WIDTH - 50), random.randint(0, HEIGHT - 50), random.randint(30, 70), random.randint(30, 70))
+                    for _ in range(3)
+                ]
+
+        draw_window(player, arrows, targets, obsticles, score)
 
 if __name__ == "__main__":
     main()
