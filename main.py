@@ -69,11 +69,11 @@ PLAYER = pygame.transform.scale(PLAYER_IMAGE, (PLAYER_WIDTH, PLAYER_HEIGHT))
 ARROW_IMAGE = pygame.image.load(os.path.join('images', 'arrow.png'))
 ARROW_IMAGE = pygame.transform.scale(ARROW_IMAGE, (ARROW_WIDTH, ARROW_HEIGHT))
 
-hit_obst_sound = pygame.mixer.Sound(os.path.join('sounds', 'hit_obst.mp3'))
-hit_targ_sound = pygame.mixer.Sound(os.path.join('sounds', 'hit_targ.mp3'))
-game_over_sound = pygame.mixer.Sound(os.path.join('sounds', 'game_over.mp3'))
-shot_sound = pygame.mixer.Sound(os.path.join('sounds', 'shot.mp3'))
-time_ticks_sound = pygame.mixer.Sound(os.path.join('sounds', 'time_ticks.mp3'))
+hit_obst_sound = pygame.mixer.Sound(os.path.join('sounds', 'hit_obst.ogg'))
+hit_targ_sound = pygame.mixer.Sound(os.path.join('sounds', 'hit_targ.ogg'))
+game_over_sound = pygame.mixer.Sound(os.path.join('sounds', 'game_over.ogg'))
+shot_sound = pygame.mixer.Sound(os.path.join('sounds', 'shot.ogg'))
+time_ticks_sound = pygame.mixer.Sound(os.path.join('sounds', 'time_ticks.ogg'))
 hit_obst_sound.set_volume(.2)
 
 # Initial positions
