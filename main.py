@@ -12,7 +12,7 @@ pygame.mixer.init()
 WIDTH, HEIGHT = 1000, 500
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
-RED = (255, 0, 0)
+PURPLE = (174, 0, 168)
 YELLOW = (255, 255, 0)
 
 WINDOW = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -25,7 +25,7 @@ WINNER_FONT = pygame.font.SysFont('comicsans', 100)
 
 FPS = 60
 VEL = 5
-ARROW_VEL = 27  # Initial speed of the arrow
+ARROW_VEL = 27 # Initial speed of the arrow
 GRAVITY = 0.5   # Gravity effect on the arrow
 MAX_ARROWS = 3
 PLAYER_WIDTH, PLAYER_HEIGHT = 50, 50
@@ -44,8 +44,8 @@ end_font = pygame.font.Font(None, 50)
 
 
 #Button Play Again
-BUTTON_COLOR = (90, 80, 255)
-BUTTON_HOVER_COLOR = (0, 200, 0)
+BUTTON_COLOR = (240, 0, 240)
+BUTTON_HOVER_COLOR = (130, 100, 120)
 BUTTON_TEXT_COLOR = (0, 0, 0)
 BUTTON_WIDTH = 200
 BUTTON_HEIGHT = 50
@@ -100,7 +100,7 @@ class Target:
         self.rect = pygame.Rect(x, y, width, height)
         self.width = width
         self.height = height
-        self.color = RED
+        self.color = PURPLE
         self.velocity = random.randint(0,5)
         self.direction = 1  # 1: down, -1: up
     
