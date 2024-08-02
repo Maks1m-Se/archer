@@ -3,6 +3,7 @@ import os
 import math
 import random
 import time
+import asyncio
 
 pygame.font.init()
 pygame.mixer.init()
@@ -198,7 +199,7 @@ def check_collision_obst(arrows, obsticles):
 
 
 ## Game Loop ##
-def main():
+async def main():
     global max_time, prev_second, waiting_for_quit
     waiting_for_quit = True  # Reset the flag for each new game session
     player = Player(*PLAYER_POS)
@@ -295,7 +296,7 @@ def main():
             
 
         if elapsed_time <= 0:
-            end(score)
+            await end(score)
             break
 
         # Display the total time across all levels
@@ -304,10 +305,12 @@ def main():
 
         draw_window(player, arrows, targets, obsticles, score, total_time_text)
 
+        await asyncio.sleep(0)
+
 
 ## End Loop #
 waiting_for_quit = True
-def end(score):
+async def end(score):
     global waiting_for_quit
     pygame.mixer.stop()
     game_over_sound.play()
@@ -330,9 +333,14 @@ def end(score):
                 waiting_for_quit = False
             if is_button_clicked(button_rect):
                 waiting_for_quit = False
-                main()  # Restart the game
+                await main()  # Restart the game
+
+        await asyncio.sleep(0)
 
     pygame.quit()
 
-if __name__ == "__main__":
-    main()
+asyncio.run(main())
+
+
+# Quit the game
+pygame.quit()
