@@ -2,6 +2,7 @@ import pygame
 import os
 import math
 import random
+import time
 
 pygame.font.init()
 pygame.mixer.init()
@@ -30,6 +31,10 @@ PLAYER_WIDTH, PLAYER_HEIGHT = 50, 50
 ARROW_WIDTH, ARROW_HEIGHT = 30, 5  # Adjusted for arrow image size
 #TARGET_VEL = 3  # Velocity of the moving target
 ANGLE = 18  # Initial angle of the arrow in degrees
+
+# Set up font
+font = pygame.font.Font(None, 20)
+end_font = pygame.font.Font(None, 50)
 
 PLAYER_IMAGE = pygame.image.load(os.path.join('images', 'archer_stickman.png'))
 PLAYER = pygame.transform.scale(PLAYER_IMAGE, (PLAYER_WIDTH, PLAYER_HEIGHT))
@@ -65,7 +70,7 @@ class Target:
         self.width = width
         self.height = height
         self.color = RED
-        self.velocity = random.randint(1,4)
+        self.velocity = random.randint(0,5)
         self.direction = 1  # 1: down, -1: up
     
     def move(self):
@@ -86,7 +91,7 @@ class Obsticle:
         self.width = width
         self.height = height
         self.color = BLACK
-        self.velocity = random.randint(1,4)
+        self.velocity = random.randint(0,5)
         self.direction = 1  # 1: down, -1: up
     
     def move(self):
@@ -101,7 +106,7 @@ class Obsticle:
     def draw(self, window):
         pygame.draw.rect(window, self.color, self.rect)
 
-def draw_window(player, arrows, targets, obsticles, score):
+def draw_window(player, arrows, targets, obsticles, score, total_time_text):
     WINDOW.fill(WHITE)
     pygame.draw.rect(WINDOW, BLACK, BORDER)
 
@@ -127,6 +132,7 @@ def draw_window(player, arrows, targets, obsticles, score):
     # Draw score
     score_text = HEALTH_FONT.render(f"Score: {score}", 1, BLACK)
     WINDOW.blit(score_text, (WIDTH - score_text.get_width() - 10, 10))
+    WINDOW.blit(total_time_text, (10, 10))
 
     pygame.display.update()
 
@@ -160,7 +166,14 @@ def check_collision(arrows, obsticles):
                 break
     return hit_obsticles
 
+
+# Timer variables
+start_time = time.time()
+max_time = 30
+elapsed_time = 0
+
 def main():
+    global elapsed_time, start_time, max_time
     player = Player(*PLAYER_POS)
     arrows = []
     score = 0
@@ -169,16 +182,16 @@ def main():
 
     # Create initial targets
     targets = [
-        Target(WIDTH - 50, HEIGHT // 4, 45, 33),
-        Target(WIDTH - 50, HEIGHT // 4, 65, 42),
-        Target(WIDTH - 50, HEIGHT // 4, 5, 51)
+        Target(WIDTH - 100, HEIGHT // 4, 50, 33),
+        Target(WIDTH - 100, HEIGHT // 4, 70, 42),
+        Target(WIDTH - 300, HEIGHT // 4, 60, 50)
     ]
 
     # Create initial obsticles
     obsticles = [
-        Obsticle(WIDTH - 100, HEIGHT // 4, 50, 30),
-        Obsticle(WIDTH - 200, HEIGHT // 2, 70, 40),
-        Obsticle(WIDTH - 300, HEIGHT * 3 // 4, 60, 50)
+        Obsticle(WIDTH * .6 , HEIGHT // 4, random.randint(15,25), random.randint(15,25)),
+        Obsticle(WIDTH * .7, HEIGHT // 5, random.randint(15,30), random.randint(15,30)),
+        Obsticle(WIDTH * .55, HEIGHT // 7, random.randint(25,35), random.randint(25,35))
     ]
 
 
@@ -187,6 +200,7 @@ def main():
     angle_rad = math.radians(ANGLE)
     init_vel_x = ARROW_VEL * math.cos(angle_rad)
     init_vel_y = -ARROW_VEL * math.sin(angle_rad)
+
 
     while run:
         clock.tick(FPS)
@@ -241,7 +255,36 @@ def main():
                     for _ in range(3)
                 ]
 
-        draw_window(player, arrows, targets, obsticles, score)
+        elapsed_time = max_time - (time.time() - start_time)
+        print(time.time())
+        if elapsed_time <= 0:
+            end(score)
+            break
+
+        # Display the total time across all levels
+        total_time_text = font.render(f"Time left: {int(elapsed_time)} s", True, BLACK)
+        
+
+        draw_window(player, arrows, targets, obsticles, score, total_time_text)
+
+waiting_for_quit = True
+def end(score):
+    global waiting_for_quit
+    pygame.mixer.stop()
+
+    # End game screen
+    WINDOW.fill((210, 210, 230))
+    end_text = end_font.render(f"Game finished!\nTotal Points: {score}", True, BLACK)
+    end_text_rect = end_text.get_rect(center=(WIDTH // 2, HEIGHT // 2))
+    WINDOW.blit(end_text, end_text_rect)
+    pygame.display.flip()
+
+    while waiting_for_quit:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                waiting_for_quit = False
+
+
 
 if __name__ == "__main__":
     main()
